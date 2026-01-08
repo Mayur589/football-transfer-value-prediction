@@ -130,5 +130,3 @@ This dataset was scraped from Transfermarkt on June 10, 2023. Statistics were tr
 - Statistics are normalized to per-90-minutes basis
 - Predictions have a confidence interval of ±15%
 - The application runs on port 5001 by default
-
-# football-transfer-value-prediction
