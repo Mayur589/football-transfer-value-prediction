@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Football Value Scout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        body {
+            background-color: #1a1a1a; /* Darker background */
+            color: #e9ecef;
+        }
+        .card {
+            background-color: #2c2c2c; /* Card background */
+            border: 1px solid #444;
+            border-radius: 0.75rem;
+        }
+        .card-header {
+            background-color: #343a40;
+            border-bottom: 1px solid #444;
+            font-weight: 600;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #adb5bd; /* Lighter label text */
+            margin-bottom: 0.25rem;
+        }
+        .form-control {
+            background-color: #404040;
+            border-color: #555;
+            color: #f8f9fa;
+        }
+        .form-control:focus {
+            background-color: #404040;
+            border-color: #0d6efd;
+            color: #f8f9fa;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .form-control::placeholder {
+            color: #777;
+        }
+        .form-text {
+            color: #adb5bd;
+        }
+        
+        /* Special card for the preset loader */
+        .preset-card {
+            background: linear-gradient(135deg, #0d6efd, #0747a6);
+            border: none;
+        }
+        .preset-card h5 {
+            color: #ffffff;
+            font-weight: 700;
+        }
+        .preset-card .form-select {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #212529;
+            font-weight: 500;
+        }
+        
+        /* Main title */
+        h1 {
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* Group subheadings */
+        h6.stat-group {
+            color: #0d6efd; /* Accent color */
+            font-weight: 600;
+            border-bottom: 2px solid #343a40;
+            padding-bottom: 8px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body class="py-5">
+    <div class="container" style="max-width: 900px;">
+        <header class="text-center mb-4">
+            <h1 class="display-4"><i class="bi bi-person-bounding-box"></i> Player Value Scout</h1>
+            <p class="lead text-body-secondary">Enter player stats to predict their market value.</p>
+        </header>
+
+        <form method="POST" class="mt-3">
+            
+            <div class="card preset-card shadow-lg mb-4">
+                <div class="card-body text-white p-4">
+                    <h5 class="card-title"><i class="bi bi-stars"></i> Quick Scout: Load Preset Player</h5>
+                    <p class="mb-2 opacity-75">Select a player to test the model with real data:</p>
+                    <select name="preset" id="preset-select" class="form-select form-select-lg mb-2" onchange="loadPreset()">
+                        <option value="">-- Select a Player to Demo --</option>
+                        {% for preset in presets %}
+                        <option value="{{ loop.index0 }}">{{ preset.name }} ({{ preset.team }}) - {{ preset.position }} - €{{ preset.real_value }}M</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-sm btn-light text-primary fw-bold" onclick="clearPreset()">
+                        <i class="bi bi-arrow-clockwise"></i> Clear & Enter Manual Values
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header"><h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Player Profile</h5></div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-calendar-event me-1"></i> Age</label>
+                                    <input type="number" name="age" class="form-control" value="25" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-rulers me-1"></i> Height (cm)</label>
+                                    <input type="number" name="height" class="form-control" value="180" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-diagram-3 me-1"></i> Position</label>
+                                    <input type="number" name="position_encoded" class="form-control" min="1" max="4" value="3" required>
+                                    <small class="form-text">1=GK, 2=DEF, 3=MID, 4=FWD</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-explicit me-1"></i> Winger?</label>
+                                    <input type="number" name="winger" class="form-control" min="0" max="1" value="0" required>
+                                    <small class="form-text">0=No, 1=Yes</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header"><h5 class="mb-0"><i class="bi bi-graph-up-arrow me-2"></i>Market & Career</h5></div>
+                        <div class="card-body p-4">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label"><i class="bi bi-cash-coin me-1"></i> Highest Value (EUR)</label>
+                                    <input type="number" name="highest_value" class="form-control" value="15000000" required>
+                                    <small class="form-text">e.g., 15000000 = €15M</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-stopwatch me-1"></i> Minutes</label>
+                                    <input type="number" name="minutes played" class="form-control" value="5000" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-person-video3 me-1"></i> Appearances</label>
+                                    <input type="number" name="appearance" class="form-control" value="50" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label"><i class="bi bi-trophy me-1"></i> Awards</label>
+                                    <input type="number" name="award" class="form-control" value="5" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header"><h5 class="mb-0"><i class="bi bi-clipboard-data me-2"></i>On-Pitch Performance (Per 90 Mins)</h5></div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <div><strong>Note:</strong> These stats are per-90-minutes (e.g., 0.5 goals = 1 goal every 2 games). Enter decimals with any precision (e.g., 0.009).</div>
+                    </div>
+                    
+                    <div class="row g-3">
+                        <h6 class="stat-group text-success"><i class="bi bi-forward me-2"></i>Attacking</h6>
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-bullseye me-1"></i> Goals (per 90)</label>
+                            <input type="text" name="goals" class="form-control" value="0.2" pattern="^\d*\.?\d+$" title="Enter a non-negative decimal number (e.g., 0.009)" placeholder="e.g., 0.009" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-magic me-1"></i> Assists (per 90)</label>
+                            <input type="text" name="assists" class="form-control" value="0.1" pattern="^\d*\.?\d+$" title="Enter a non-negative decimal number (e.g., 0.009)" placeholder="e.g., 0.009" required>
+                        </div>
+
+                        <h6 class="stat-group text-primary"><i class="bi bi-shield-shaded me-2"></i>Defending</h6>
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-shield-exclamation me-1"></i> Goals Conceded (per 90)</label>
+                            <input type="text" name="goals conceded" class="form-control" value="1.0" pattern="^\d*\.?\d+$" title="Enter a non-negative decimal number (e.g., 0.009)" placeholder="e.g., 0.009" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-shield-check me-1"></i> Clean Sheets (per 90)</label>
+                            <input type="text" name="clean sheets" class="form-control" value="0.3" pattern="^\d*\.?\d+$" title="Enter a non-negative decimal number (e.g., 0.009)" placeholder="e.g., 0.009" required>
+                        </div>
+
+                        <h6 class="stat-group text-warning"><i class="bi bi-file-earmark-medical me-2"></i>Discipline</h6>
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-file-text me-1"></i> Yellow Cards (p90)</label>
+                            <input type="text" name="yellow cards" class="form-control" value="0.2" pattern="^\d*\.?\d+$" title="Enter a non-negative decimal number (e.g., 0.009)" placeholder="e.g., 0.009" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-files me-1"></i> 2nd Yellows (p90)</label>
+                            <input type="text" name="second yellow cards" class="form-control" value="0.01" pattern="^\d*\.?\d+$" title="Enter a non-negative decimal number (e.g., 0.009)" placeholder="e.g., 0.009" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label"><i class="bi bi-file-earmark-break me-1"></i> Red Cards (p90)</label>
+                            <input type="text" name="red cards" class="form-control" value="0.01" pattern="^\d*\.?\d+$" title="Enter a non-negative decimal number (e.g., 0.009)" placeholder="e.g., 0.009" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header"><h5 class="mb-0"><i class="bi bi-bandaid me-2"></i>Physical Condition</h5></div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-calendar-x me-1"></i> Days Injured</label>
+                            <input type="number" name="days_injured" class="form-control" value="100" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label"><i class="bi bi-slash-circle me-1"></i> Games Injured</label>
+                            <input type="number" name="games_injured" class="form-control" value="10" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-success btn-lg p-3 fw-bold fs-5">
+                    <i class="bi bi-calculator-fill me-2"></i> PREDICT PLAYER VALUE
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <script>
+        // Preset player data from backend
+        const presets = [
+            {% for preset in presets %}
+            {
+                name: "{{ preset.name }}",
+                team: "{{ preset.team }}",
+                position: "{{ preset.position }}",
+                real_value: {{ preset.real_value }},
+                data: {{ preset.data | tojson }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        function loadPreset() {
+            const select = document.getElementById('preset-select');
+            const idx = parseInt(select.value);
+            
+            if (isNaN(idx)) return;
+            
+            const preset = presets[idx];
+            const data = preset.data;
+            
+            // Fill all form fields, default to 0 for missing values
+            document.querySelector('input[name="highest_value"]').value = data['highest_value'] ?? 0;
+            document.querySelector('input[name="minutes played"]').value = data['minutes played'] ?? 0;
+            document.querySelector('input[name="appearance"]').value = data['appearance'] ?? 0;
+            document.querySelector('input[name="award"]').value = data['award'] ?? 0;
+            document.querySelector('input[name="assists"]').value = data['assists'] ?? 0;
+            document.querySelector('input[name="goals"]').value = data['goals'] ?? 0;
+            document.querySelector('input[name="position_encoded"]').value = data['position_encoded'] ?? 0;
+            document.querySelector('input[name="goals conceded"]').value = data['goals conceded'] ?? 0;
+            document.querySelector('input[name="clean sheets"]').value = data['clean sheets'] ?? 0;
+            document.querySelector('input[name="yellow cards"]').value = data['yellow cards'] ?? 0;
+            document.querySelector('input[name="second yellow cards"]').value = data['second yellow cards'] ?? 0;
+            document.querySelector('input[name="red cards"]').value = data['red cards'] ?? 0;
+            document.querySelector('input[name="days_injured"]').value = data['days_injured'] ?? 0;
+            document.querySelector('input[name="games_injured"]').value = data['games_injured'] ?? 0;
+            document.querySelector('input[name="height"]').value = data['height'] ?? 0;
+            document.querySelector('input[name="age"]').value = data['age'] ?? 0;
+            document.querySelector('input[name="winger"]').value = data['winger'] ?? 0;
+        }
+
+        function clearPreset() {
+            document.getElementById('preset-select').value = '';
+            // Reset all fields to default values
+            document.querySelectorAll('input[type="number"], input[type="text"]').forEach(input => {
+                if (input.name === 'highest_value') input.value = 15000000;
+                else if (input.name === 'minutes played') input.value = 5000;
+                else if (input.name === 'appearance') input.value = 50;
+                else if (input.name === 'award') input.value = 5;
+                else if (input.name === 'assists') input.value = 0.1;
+                else if (input.name === 'goals') input.value = 0.2;
+                else if (input.name === 'position_encoded') input.value = 3;
+                else if (input.name === 'goals conceded') input.value = 1.0;
+                else if (input.name === 'clean sheets') input.value = 0.3;
+                else if (input.name === 'yellow cards') input.value = 0.2;
+                else if (input.name === 'second yellow cards') input.value = 0.01;
+                else if (input.name === 'red cards') input.value = 0.01;
+                else if (input.name === 'days_injured') input.value = 100;
+                else if (input.name === 'games_injured') input.value = 10;
+                else if (input.name === 'height') input.value = 180;
+                else if (input.name === 'age') input.value = 25;
+                else if (input.name === 'winger') input.value = 0;
+            });
+        }
+    </script>
+</body>
+</html>

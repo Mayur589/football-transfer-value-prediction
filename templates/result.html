@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <title>Prediction Result</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #e9ecef;
+        }
+        .card {
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            border-radius: 0.75rem;
+            overflow: hidden; /* For clean rounded corners on images */
+        }
+        .card-header {
+            background-color: #343a40;
+            border-bottom: 1px solid #444;
+            font-weight: 600;
+        }
+        .card-body h2 {
+            font-weight: 700;
+        }
+        .nav-tabs .nav-link {
+            color: #adb5bd;
+            border: none;
+            border-bottom: 3px solid transparent;
+        }
+        .nav-tabs .nav-link.active {
+            color: #fff;
+            background-color: #2c2c2c;
+            border-bottom: 3px solid #0d6efd;
+        }
+        .tab-pane {
+            background-color: #212121;
+            padding: 1.5rem;
+            border: 1px solid #444;
+            border-top: none;
+            border-radius: 0 0 0.75rem 0.75rem;
+        }
+        .img-fluid {
+            border-radius: 0.5rem;
+            border: 1px solid #444;
+        }
+    </style>
+</head>
+<body class="py-5">
+    <div class="container" style="max-width: 900px;">
+        <header class="text-center mb-4">
+            <h1 class="display-4"><i class="bi bi-graph-up-arrow"></i> Prediction Result</h1>
+        </header>
+        
+        {% if real_value %}
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <div class="card text-center h-100 shadow-sm">
+                    <div class="card-header fs-5">
+                        <i class="bi bi-person-check-fill me-2"></i> Actual Value
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h2 class="text-primary display-5">€{{ real_value }}M</h2>
+                        <p class="text-body-secondary mb-0">Real value from Transfermarkt</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card text-center h-100 shadow-sm">
+                    <div class="card-header fs-5">
+                        <i class="bi bi-robot me-2"></i> Predicted Value
+                    </div>
+                    <div class="card-body d-flex flex-column justify-content-center">
+                        <h2 class="text-success display-5">€{{ prediction }}M</h2>
+                        <p class="text-body-secondary mb-0">AI model prediction</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card text-center shadow-sm mb-4 border-info">
+            <div class="card-header bg-info bg-opacity-25 border-info fs-5">
+                <i class="bi bi-bar-chart-line-fill me-2"></i>Prediction Accuracy
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <h4>{{ ((1 - (real_value - prediction)|abs / real_value) * 100) | round(1) }}%</h4>
+                        <p class="text-body-secondary mb-0">Accuracy</p>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">€{{ ((real_value - prediction)|abs) | round(2) }}M</h4>
+                        <p class="text-body-secondary mb-0">Difference</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% else %}
+        <div class="card text-center border-success shadow-sm mb-4">
+            <div class="card-header bg-success bg-opacity-25 border-success fs-5">
+                <i class="bi bi-robot me-2"></i>Predicted Transfer Value
+            </div>
+            <div class="card-body p-4">
+                <h2 class="text-success display-4">€{{ prediction }}M</h2>
+                <p class="text-body-secondary mb-0">Model prediction based on your inputs</p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="d-grid gap-2 mb-5">
+            <a href="/" class="btn btn-primary btn-lg fw-bold"><i class="bi bi-arrow-left-circle me-2"></i> Back to Form & Try Another Player</a>
+        </div>
+
+        <header class="text-center mb-4">
+            <h1 class="display-6">Model Analysis Graphs</h1>
+        </header>
+
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="analysisTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics-pane" type="button" role="tab" aria-controls="metrics-pane" aria-selected="true">Performance Metrics</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="scatter-tab" data-bs-toggle="tab" data-bs-target="#scatter-pane" type="button" role="tab" aria-controls="scatter-pane" aria-selected="false">Prediction Analysis</button>
+                    </li>
+                    <!-- <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="importance-tab" data-bs-toggle="tab" data-bs-target="#importance-pane" type="button" role="tab" aria-controls="importance-pane" aria-selected="false">Feature Importance</button>
+                    </li> -->
+                </ul>
+            </div>
+            <div class="card-body p-0">
+                <div class="tab-content" id="analysisTabsContent">
+                    
+                    <div class="tab-pane fade show active" id="metrics-pane" role="tabpanel" aria-labelledby="metrics-tab" tabindex="0">
+                        <h5 class="mb-3 fw-bold">Model Performance Metrics</h5>
+                        <div class="row g-3">
+                            <div class="col-lg-4">
+                                <label class="form-label text-body-secondary fw-bold">Mean Absolute Error (Lower is Better)</label>
+                                <img src="{{ url_for('static', filename='comparison_mae_original.png') }}" alt="Comparison MAE" class="img-fluid">
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="form-label text-body-secondary fw-bold">Root Mean Squared Error (Lower is Better)</label>
+                                <img src="{{ url_for('static', filename='comparison_rmse_original.png') }}" alt="Comparison RMSE" class="img-fluid">
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="form-label text-body-secondary fw-bold">R-squared Score (Higher is Better)</label>
+                                <img src="{{ url_for('static', filename='comparison_r2_score.png') }}" alt="Comparison R2" class="img-fluid">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-pane fade" id="scatter-pane" role="tabpanel" aria-labelledby="scatter-tab" tabindex="0">
+                        <h5 class="mb-3 fw-bold">Predicted vs. Actual Values</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-body-secondary fw-bold">RandomForest Predictions</label>
+                                <img src="{{ url_for('static', filename='scatter_randomforest.png') }}" alt="RandomForest Scatter" class="img-fluid">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-body-secondary fw-bold">MLP (Neural Network) Predictions</label>
+                                <img src="{{ url_for('static', filename='scatter_mlp.png') }}" alt="MLP Scatter" class="img-fluid">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- <div class="tab-pane fade" id="importance-pane" role="tabpanel" aria-labelledby="importance-tab" tabindex="0">
+                        <h5 class="mb-3 fw-bold">Best Model Feature Importance</h5>
+                        <p class="text-body-secondary">This graph shows which features the *best* model (e.g., RandomForest) used to make its decisions. (Will appear blank if the best model was MLP).</p>
+                        <img src="{{ url_for('static', filename='feature_importance.png') }}" alt="Feature Importance" class="img-fluid">
+                    </div> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="container mt-5">
+        <h2 class="text-center mt-4 mb-3">All Analysis Images</h2>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+          {% set static_images = [
+            'comparison_mae_original.png',
+            'comparison_rmse_original.png',
+            'comparison_r2_score.png',
+            'scatter_gradientboosting.png',
+            'scatter_xgboost.png',
+            'scatter_randomforest.png',
+            'scatter_mlp.png',
+          ] %}
+          {% for img in static_images %}
+          <div class="col text-center">
+            <div class="card h-100 p-3 border-info bg-dark">
+              <a href="#" data-bs-toggle="modal" data-bs-target="#imgModal" data-img="{{ url_for('static', filename=img) }}" data-caption="{{ img }}">
+                <img src="{{ url_for('static', filename=img) }}" class="img-thumbnail mb-2" style="max-height: 200px; object-fit: contain; background:#222;" alt="{{ img }}">
+              </a>
+              <small class="text-secondary">{{ img }}</small>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+    </div>
+    <!-- Modal -->
+    <div class="modal fade" id="imgModal" tabindex="-1" aria-labelledby="imgModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+          <div class="modal-header border-0">
+            <h5 class="modal-title text-white" id="imgModalLabel">View Image</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center">
+            <img id="modalImage" src="" style="width:100%; max-height:80vh; object-fit:contain; background:#222;" alt="Large Image">
+            <div id="modalCaption" class="mt-2 text-light small"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const imgModal = document.getElementById('imgModal');
+      imgModal.addEventListener('show.bs.modal', function (event) {
+        const trigger = event.relatedTarget;
+        const imgSrc = trigger.getAttribute('data-img');
+        const caption = trigger.getAttribute('data-caption');
+        const modalImg = document.getElementById('modalImage');
+        const modalCaption = document.getElementById('modalCaption');
+        modalImg.src = imgSrc;
+        modalCaption.textContent = caption;
+      });
+    </script>
+</body>
+</html>
